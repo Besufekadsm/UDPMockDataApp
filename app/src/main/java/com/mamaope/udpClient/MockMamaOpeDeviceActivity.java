@@ -74,10 +74,14 @@ public class MockMamaOpeDeviceActivity extends AppCompatActivity implements View
                     }
                     DatagramSocket udpSocket = new DatagramSocket();
                     InetAddress serverAddr = InetAddress.getByName(destinationIP);
-                    message = "[" + sample[i] + "," + sample[i] + "," + sample[i] + "," + sample[i] + "," + sample[i] + "," + sample[i] + "]";
+                    message =  sample[i];
                     byte[] buf = (message).getBytes();
+                    //Log.e("Destination IP : ",""+ destinationIP);
+                    //Log.e("Destination Port : ",""+ destinationPort);
+                    //Log.e("Buffer Length",""+ buf.length);
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, destinationPort);
-                    tvOutputMessage.append("\n Sending : " + message);
+                    //tvOutputMessage.append("\n Sending : " + message);
+                    //Log.i("Sending : " , message);
                     udpSocket.send(packet);
                 } catch (SocketException e) {
                     Log.e("Udp:", "Socket Error:", e);
