@@ -19,15 +19,19 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 
 public class MockMamaOpeDeviceActivity extends AppCompatActivity implements View.OnClickListener {
 
     Button btnMockMamaOpeData, btnHome;
     TextView tvOutputMessage;
-    TextInputEditText etDestinationPort,etDestinationIP;
+    TextInputEditText etDestinationPort, etDestinationIP;
     String message, destinationIP;
     int destinationPort;
+    DatagramSocket udpSocket;
+    InetAddress serverAddr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,16 +54,31 @@ public class MockMamaOpeDeviceActivity extends AppCompatActivity implements View
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_home:
+                //CleanUp Close UDP Socket
+                if (udpSocket.isConnected()) {
+                    udpSocket.disconnect();
+                    udpSocket.close();
+                }
                 startActivity(new Intent(MockMamaOpeDeviceActivity.this, MainActivity.class));
                 break;
             case R.id.btn_mock_mamaope_device:
+
                 if (!etDestinationPort.getText().toString().isEmpty()) {
-                    destinationPort=Integer.parseInt(etDestinationPort.getText().toString());
+                    destinationPort = Integer.parseInt(etDestinationPort.getText().toString());
                 }
                 if (!etDestinationIP.getText().toString().isEmpty()) {
                     destinationIP = etDestinationIP.getText().toString();
                 }
-                new Thread(new MockDeviceData()).start();
+                try {
+                    serverAddr = InetAddress.getByName(destinationIP);
+                    udpSocket = new DatagramSocket(null);
+                    udpSocket.setReuseAddress(true);
+                    new Thread(new MockDeviceData()).start(); // Start Fetching data from H/W
+
+                } catch (SocketException | UnknownHostException e) {
+                    e.printStackTrace();
+                }
+
                 break;
         }
     }
@@ -67,21 +86,26 @@ public class MockMamaOpeDeviceActivity extends AppCompatActivity implements View
     public class MockDeviceData implements Runnable {
         @Override
         public void run() {
+            tvOutputMessage.append("Sending Address : "+ destinationIP + "\n");
+            tvOutputMessage.append("Sending Port : " + destinationPort + "\n");
+            tvOutputMessage.append("Mocking in Progress ... " + "\n");
+
             for (int i = 0; i <= sample.length; i++) {
                 try {
-                    if(i == sample.length){
-                        i=0;
+                    if (i == sample.length) {
+                        i = 0;
+                        Log.i("Sending Address : ", destinationIP);
+                        Log.i("Sending Port : ", String.valueOf(destinationPort));
+                        Log.i("Sending Data: ", message);
                     }
-                    DatagramSocket udpSocket = new DatagramSocket();
-                    InetAddress serverAddr = InetAddress.getByName(destinationIP);
-                    message =  sample[i];
+
+                    message = sample[i];
                     byte[] buf = (message).getBytes();
                     //Log.e("Destination IP : ",""+ destinationIP);
                     //Log.e("Destination Port : ",""+ destinationPort);
                     //Log.e("Buffer Length",""+ buf.length);
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, destinationPort);
                     //tvOutputMessage.append("\n Sending : " + message);
-                    //Log.i("Sending : " , message);
                     udpSocket.send(packet);
                 } catch (SocketException e) {
                     Log.e("Udp:", "Socket Error:", e);
