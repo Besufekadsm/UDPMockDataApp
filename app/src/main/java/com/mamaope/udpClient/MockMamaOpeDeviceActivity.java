@@ -4,8 +4,6 @@ import static com.mamaope.udpClient.Constants.SEND_RECEIVER_IP_ADDRESS;
 import static com.mamaope.udpClient.Constants.SEND_RECEIVER_IP_PORT;
 import static com.mamaope.udpClient.Constants.sample;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,13 +11,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
@@ -32,6 +31,7 @@ public class MockMamaOpeDeviceActivity extends AppCompatActivity implements View
     int destinationPort;
     DatagramSocket udpSocket;
     InetAddress serverAddr;
+    boolean isMockingOn = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,22 +63,30 @@ public class MockMamaOpeDeviceActivity extends AppCompatActivity implements View
                 break;
             case R.id.btn_mock_mamaope_device:
 
-                if (!etDestinationPort.getText().toString().isEmpty()) {
-                    destinationPort = Integer.parseInt(etDestinationPort.getText().toString());
-                }
-                if (!etDestinationIP.getText().toString().isEmpty()) {
-                    destinationIP = etDestinationIP.getText().toString();
-                }
-                try {
-                    serverAddr = InetAddress.getByName(destinationIP);
-                    udpSocket = new DatagramSocket(null);
-                    udpSocket.setReuseAddress(true);
-                    new Thread(new MockDeviceData()).start(); // Start Fetching data from H/W
+                if (!isMockingOn) {
 
-                } catch (SocketException | UnknownHostException e) {
-                    e.printStackTrace();
-                }
+                    isMockingOn = true;
+                    btnMockMamaOpeData.setText("Stop Mocking MamaOpe Device");
 
+                    if (!etDestinationPort.getText().toString().isEmpty()) {
+                        destinationPort = Integer.parseInt(etDestinationPort.getText().toString());
+                    }
+                    if (!etDestinationIP.getText().toString().isEmpty()) {
+                        destinationIP = etDestinationIP.getText().toString();
+                    }
+                    try {
+                        serverAddr = InetAddress.getByName(destinationIP);
+                        udpSocket = new DatagramSocket(null);
+                        udpSocket.setReuseAddress(true);
+                        new Thread(new MockDeviceData()).start(); // Start Fetching data from H/W
+
+                    } catch (SocketException | UnknownHostException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    isMockingOn = false;
+                    btnMockMamaOpeData.setText("Mock MamaOpe Device");
+                }
                 break;
         }
     }
@@ -86,11 +94,12 @@ public class MockMamaOpeDeviceActivity extends AppCompatActivity implements View
     public class MockDeviceData implements Runnable {
         @Override
         public void run() {
-            tvOutputMessage.append("Sending Address : "+ destinationIP + "\n");
+            tvOutputMessage.append("Sending Address : " + destinationIP + "\n");
             tvOutputMessage.append("Sending Port : " + destinationPort + "\n");
             tvOutputMessage.append("Mocking in Progress ... " + "\n");
 
-            for (int i = 0; i <= sample.length; i++) {
+            for (int i = 0; i <= sample.length && isMockingOn; i++) {
+
                 try {
                     if (i == sample.length) {
                         i = 0;
@@ -111,8 +120,10 @@ public class MockMamaOpeDeviceActivity extends AppCompatActivity implements View
                     Log.e("Udp:", "Socket Error:", e);
                 } catch (IOException e) {
                     Log.e("Udp Send:", "IO Error:", e);
+
                 }
             }
+            tvOutputMessage.append("Mocking To : " + destinationIP + " Stopped" + "\n");
         }
     }
 }
