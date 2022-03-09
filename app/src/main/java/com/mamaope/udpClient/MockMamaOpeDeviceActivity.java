@@ -123,7 +123,7 @@ public class MockMamaOpeDeviceActivity extends AppCompatActivity implements View
 
                 }
             }
-            tvOutputMessage.append("Mocking To : " + destinationIP + " Stopped" + "\n");
+            tvOutputMessage.append("\nMocking To: " + destinationIP + " Stopped" + "\n\n");
         }
     }
 }
